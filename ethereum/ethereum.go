@@ -54,7 +54,6 @@ func WatchEvents() {
 					glog.Error(err)
 				}
 				blockTime := header.Time
-				glog.Info("New Proposal received, proposal ID " + strconv.Itoa(int(events.Event.Proposal.Int64())))
 				go handleNewProposal(events.Event.Repository, events.Event.Who.Hex(), events.Event.Proposal, blockTime)
 			}
 		}
@@ -69,25 +68,31 @@ func WatchEvents() {
 
 func handleNewProposal(_repoHash [32]byte, _address string, _proposalID *big.Int, _currentTime *big.Int) {
 	user, err := database.GetUser(_address)
+	username := "unknown"
 	if err != nil {
 		glog.Error(err)
-	} else if user != nil && !user.HasUsedClient {
-		user.HasUsedClient = true
-		err = database.UpdateUser(*user)
-		if err != nil {
-			glog.Error(err)
+	} else if user != nil {
+		username = user.TwitterScreenName
+		if !user.HasUsedClient {
+			user.HasUsedClient = true
+			err = database.UpdateUser(*user)
+			if err != nil {
+				glog.Error(err)
+			}
 		}
 	}
 
+	glog.Infof("[PID%d/'%s'] New Proposal received", _proposalID.Int64(), username)
+
 	mutex.Lock()
-	glog.Info("Voting on proposal " + strconv.Itoa(int(_proposalID.Int64())))
+	glog.Infof("[PID%d/'%s'] Voting on proposal", _proposalID.Int64(), username)
 	KNWVoteID, choiceArray, commitEnd, revealEnd, KNWVotingInstance, err := vote(_repoHash, _proposalID)
 	mutex.Unlock()
 	if err != nil {
 		glog.Error(err)
 		return
 	}
-	glog.Info("Voted on proposal " + strconv.Itoa(int(KNWVoteID.Int64())))
+	glog.Infof("[KNW%d/'%s'] Voted on proposal", KNWVoteID.Int64(), username)
 
 	waitTimeCommit := new(big.Int).Sub(commitEnd, _currentTime)
 	waitTimeReveal := new(big.Int).Sub(revealEnd, commitEnd)
@@ -98,7 +103,7 @@ func handleNewProposal(_repoHash [32]byte, _address string, _proposalID *big.Int
 		return
 	}
 
-	glog.Info("Waiting for commit for " + strconv.Itoa(int(KNWVoteID.Int64())))
+	glog.Infof("[KNW%d/'%s'] Waiting for commit phase to end", KNWVoteID.Int64(), username)
 	time.Sleep(time.Duration(waitTimeCommit.Int64()) * time.Second)
 
 	newCommitPeriodActive := commitPeriodActive
@@ -112,14 +117,14 @@ func handleNewProposal(_repoHash [32]byte, _address string, _proposalID *big.Int
 	}
 
 	mutex.Lock()
-	glog.Info("Opening on proposal " + strconv.Itoa(int(KNWVoteID.Int64())))
+	glog.Infof("[KNW%d/'%s'] Opening votes", KNWVoteID.Int64(), username)
 	err = open(_repoHash, _proposalID, KNWVoteID, choiceArray)
 	mutex.Unlock()
 	if err != nil {
 		glog.Error(err)
 		return
 	}
-	glog.Info("Opened on proposal " + strconv.Itoa(int(KNWVoteID.Int64())))
+	glog.Infof("[KNW%d/'%s'] Opened votes", KNWVoteID.Int64(), username)
 
 	revealPeriodActive, err := KNWVotingInstance.OpenPeriodActive(nil, KNWVoteID)
 	if err != nil {
@@ -127,7 +132,7 @@ func handleNewProposal(_repoHash [32]byte, _address string, _proposalID *big.Int
 		return
 	}
 
-	glog.Info("Waiting for reveal for " + strconv.Itoa(int(KNWVoteID.Int64())))
+	glog.Infof("[KNW%d/'%s'] Waiting for opening phase to end", KNWVoteID.Int64(), username)
 	time.Sleep(time.Duration(waitTimeReveal.Int64()) * time.Second)
 
 	newRevealPeriodActive := revealPeriodActive
@@ -141,14 +146,14 @@ func handleNewProposal(_repoHash [32]byte, _address string, _proposalID *big.Int
 	}
 
 	mutex.Lock()
-	glog.Info("Finalizing on proposal " + strconv.Itoa(int(KNWVoteID.Int64())))
+	glog.Infof("[KNW%d/'%s'] Finalizing votes", KNWVoteID.Int64(), username)
 	err = finalize(_repoHash, _proposalID, KNWVoteID)
 	mutex.Unlock()
 	if err != nil {
 		glog.Error(err)
 		return
 	}
-	glog.Info("Finalized on proposal " + strconv.Itoa(int(KNWVoteID.Int64())))
+	glog.Infof("[KNW%d/'%s'] Finalized votes", KNWVoteID.Int64(), username)
 }
 
 // Approve will set the token allowance for the accounts to the maximum
