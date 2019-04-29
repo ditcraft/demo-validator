@@ -11,17 +11,17 @@ import (
 	"sync"
 	"time"
 
+	"github.com/ditcraft/demo-validator/database"
+	"github.com/ditcraft/demo-validator/smartcontracts/KNWToken"
+	"github.com/ditcraft/demo-validator/smartcontracts/KNWVoting"
+	"github.com/ditcraft/demo-validator/smartcontracts/ditDemoCoordinator"
+	"github.com/ditcraft/demo-validator/smartcontracts/ditToken"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/golang/glog"
-	"github.com/marvinkruse/dit-demo-validator/database"
-	"github.com/marvinkruse/dit-demo-validator/smartcontracts/KNWToken"
-	"github.com/marvinkruse/dit-demo-validator/smartcontracts/KNWVoting"
-	"github.com/marvinkruse/dit-demo-validator/smartcontracts/ditDemoCoordinator"
-	"github.com/marvinkruse/dit-demo-validator/smartcontracts/ditToken"
 )
 
 var lastBlock = uint64(0)

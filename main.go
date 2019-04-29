@@ -3,9 +3,9 @@ package main
 import (
 	"flag"
 
+	"github.com/ditcraft/demo-validator/ethereum"
 	"github.com/golang/glog"
 	"github.com/joho/godotenv"
-	"github.com/marvinkruse/dit-demo-validator/ethereum"
 )
 
 func main() {
