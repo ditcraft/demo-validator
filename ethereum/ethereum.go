@@ -43,26 +43,32 @@ func WatchEvents() {
 		events, err := ditCooordinatorInstance.FilterProposeCommit(&bind.FilterOpts{Context: context.Background(), Start: lastBlock}, nil, nil, nil)
 		if err != nil {
 			glog.Error(err)
-		}
-
-		var currentBlock uint64
-		for events.Next() {
-			currentBlock = events.Event.Raw.BlockNumber
-			if lastBlock > 0 {
-				header, err := connection.HeaderByNumber(context.Background(), big.NewInt(int64(events.Event.Raw.BlockNumber)))
-				if err != nil && err.Error() != "missing required field 'mixHash' for Header" {
-					glog.Error(err)
-				}
-				blockTime := header.Time
-				go handleNewProposal(events.Event.Repository, events.Event.Who.Hex(), events.Event.Proposal, blockTime)
+			time.Sleep(2 * time.Second)
+			connection, err = getConnection()
+			if err != nil {
+				glog.Error(err)
 			}
-		}
+			time.Sleep(2 * time.Second)
+		} else {
+			var currentBlock uint64
+			for events.Next() {
+				currentBlock = events.Event.Raw.BlockNumber
+				if lastBlock > 0 {
+					header, err := connection.HeaderByNumber(context.Background(), big.NewInt(int64(events.Event.Raw.BlockNumber)))
+					if err != nil && err.Error() != "missing required field 'mixHash' for Header" {
+						glog.Error(err)
+					}
+					blockTime := header.Time
+					go handleNewProposal(events.Event.Repository, events.Event.Who.Hex(), events.Event.Proposal, blockTime)
+				}
+			}
 
-		if currentBlock >= lastBlock {
-			lastBlock = currentBlock + 1
-		}
+			if currentBlock >= lastBlock {
+				lastBlock = currentBlock + 1
+			}
 
-		time.Sleep(5 * time.Second)
+			time.Sleep(5 * time.Second)
+		}
 	}
 }
 
