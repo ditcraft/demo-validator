@@ -2,7 +2,15 @@
 Users who are testing the dit client in demo mode would be pretty bored if they propose a commit and no one votes on it. This is why we created a simple demo validator, written in Go. It waits for the ProposeCommit event from the ditCoordinator (only the demo one) and automatically votes on it with five demo voters. Their choices are random.
 
 ## Running it yourself
-You like the idea and want to use a demo validator in your own project? Go ahead - we embrace open source! In order to work, this demo validator needs an .env file in the same directory, containing the following things:
+You like the idea and want to use a demo validator in your own project? Go ahead - we embrace open source!
+
+* Run `go get github.com/ditcraft/demo-validator`
+    * Note: Since this is a go project, golang-go needs to be installed
+* Enter the directory of the demo-validator with `cd $GOPATH/src/github.com/ditcraft/demo-validator`
+* Install the necessary dependencies with `go get -d ./...`
+* Run with `go run main.go`
+
+Additionally, in order to work, this demo validator needs an .env file in the same directory, containing the following things:
 
 ```
 ETHEREUM_RPC=https://my.fancy.rpc.url
