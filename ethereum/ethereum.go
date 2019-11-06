@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"math/big"
-	"math/rand"
 	"os"
 	"strconv"
 	"strings"
@@ -72,7 +71,7 @@ func WatchEvents() {
 	}
 }
 
-func handleNewProposal(_repoHash [32]byte, _address string, _proposalID *big.Int, _currentTime *big.Int) {
+func handleNewProposal(_repoHash [32]byte, _address string, _proposalID *big.Int, _currentTime uint64) {
 	user, err := database.GetUser(_address)
 	username := "unknown"
 	if err != nil {
@@ -100,7 +99,7 @@ func handleNewProposal(_repoHash [32]byte, _address string, _proposalID *big.Int
 	}
 	glog.Infof("[KNW%d/'%s'] Voted on proposal", KNWVoteID.Int64(), username)
 
-	waitTimeCommit := new(big.Int).Sub(commitEnd, _currentTime)
+	waitTimeCommit := new(big.Int).Sub(commitEnd, big.NewInt(int64(_currentTime)))
 	waitTimeReveal := new(big.Int).Sub(revealEnd, commitEnd)
 
 	commitPeriodActive, err := KNWVotingInstance.CommitPeriodActive(nil, KNWVoteID)
@@ -258,7 +257,7 @@ func vote(_repoHash [32]byte, _proposalID *big.Int) (*big.Int, []*big.Int, *big.
 	for i := 0; i < 5; i++ {
 		// In order to create a valid abi-encoded hash of the vote choice and salt
 		// we need to create an abi object
-		uint256Type, _ := abi.NewType("uint256")
+		uint256Type, _ := abi.NewType("uint256", nil)
 		arguments := abi.Arguments{
 			{
 				Type: uint256Type,
@@ -268,8 +267,13 @@ func vote(_repoHash [32]byte, _proposalID *big.Int) (*big.Int, []*big.Int, *big.
 			},
 		}
 
-		rand.Seed(int64(time.Now().Nanosecond()) + int64(i))
-		choices = append(choices, big.NewInt(int64(rand.Intn(2))))
+		// rand.Seed(int64(time.Now().Nanosecond()) + int64(i))
+		// choices = append(choices, big.NewInt(int64(rand.Intn(2))))
+		choice := int64(i % 2)
+		if i == 0 {
+			choice = int64(1)
+		}
+		choices = append(choices, big.NewInt(choice))
 		// We will now put pack this abi object into a bytearray
 		bytes, _ := arguments.Pack(
 			choices[i],
@@ -285,7 +289,7 @@ func vote(_repoHash [32]byte, _proposalID *big.Int) (*big.Int, []*big.Int, *big.
 			return nil, nil, nil, nil, nil, err
 		}
 
-		KNWBalance, err := KNWTokenInstance.FreeBalanceOfLabel(nil, common.HexToAddress(os.Getenv("ETHEREUM_ADDRESS_"+strconv.Itoa(i))), proposal.KnowledgeLabel)
+		KNWBalance, err := KNWTokenInstance.FreeBalanceOfID(nil, common.HexToAddress(os.Getenv("ETHEREUM_ADDRESS_"+strconv.Itoa(i))), proposal.KnowledgeID)
 		if err != nil {
 			return nil, nil, nil, nil, nil, err
 		}
